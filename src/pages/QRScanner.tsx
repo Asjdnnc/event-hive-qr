@@ -4,17 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getCurrentUser, updateTeamFoodStatus, getTeam } from "@/lib/data";
 import { Team } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import NavBar from "@/components/NavBar";
 import TeamCard from "@/components/TeamCard";
 import { QrReader } from "react-qr-reader";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { QrCode, Utensils, Cake, Sandwich } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const QRScanner = () => {
   const [user, setUser] = useState(getCurrentUser());
@@ -26,6 +24,7 @@ const QRScanner = () => {
   const [mealAction, setMealAction] = useState<"valid" | "invalid">("valid");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Redirect non-admin users
   useEffect(() => {
@@ -97,20 +96,6 @@ const QRScanner = () => {
     }
   };
 
-  const handleUpdateFoodStatus = (status: "valid" | "invalid") => {
-    if (scannedTeam) {
-      const updatedTeam = updateTeamFoodStatus(scannedTeam.id, selectedMeal, status);
-      
-      if (updatedTeam) {
-        setScannedTeam(updatedTeam);
-        toast({
-          title: "Status Updated",
-          description: `${selectedMeal.charAt(0).toUpperCase() + selectedMeal.slice(1)} status updated to ${status}.`,
-        });
-      }
-    }
-  };
-
   const startScanning = (purpose: "entry" | "lunch" | "dinner" | "snacks") => {
     setScanPurpose(purpose);
     setScanning(true);
@@ -119,15 +104,15 @@ const QRScanner = () => {
   const getScanPurposeIcon = (purpose: string) => {
     switch (purpose) {
       case "entry":
-        return <QrCode className="mr-2 h-4 w-4" />;
+        return <QrCode className="h-4 w-4" />;
       case "lunch":
-        return <Utensils className="mr-2 h-4 w-4" />;
+        return <Utensils className="h-4 w-4" />;
       case "dinner":
-        return <Cake className="mr-2 h-4 w-4" />;
+        return <Cake className="h-4 w-4" />;
       case "snacks":
-        return <Sandwich className="mr-2 h-4 w-4" />;
+        return <Sandwich className="h-4 w-4" />;
       default:
-        return <QrCode className="mr-2 h-4 w-4" />;
+        return <QrCode className="h-4 w-4" />;
     }
   };
 
@@ -157,20 +142,20 @@ const QRScanner = () => {
 
         <Tabs defaultValue="entry" className="max-w-3xl mx-auto">
           <TabsList className="grid grid-cols-4 mb-8">
-            <TabsTrigger value="entry" className="flex items-center justify-center">
-              <QrCode className="mr-2 h-4 w-4" />
+            <TabsTrigger value="entry" className="flex items-center justify-center gap-1">
+              <QrCode className="h-4 w-4" />
               <span className="hidden sm:inline">Entry</span>
             </TabsTrigger>
-            <TabsTrigger value="lunch" className="flex items-center justify-center">
-              <Utensils className="mr-2 h-4 w-4" />
+            <TabsTrigger value="lunch" className="flex items-center justify-center gap-1">
+              <Utensils className="h-4 w-4" />
               <span className="hidden sm:inline">Lunch</span>
             </TabsTrigger>
-            <TabsTrigger value="dinner" className="flex items-center justify-center">
-              <Cake className="mr-2 h-4 w-4" />
+            <TabsTrigger value="dinner" className="flex items-center justify-center gap-1">
+              <Cake className="h-4 w-4" />
               <span className="hidden sm:inline">Dinner</span>
             </TabsTrigger>
-            <TabsTrigger value="snacks" className="flex items-center justify-center">
-              <Sandwich className="mr-2 h-4 w-4" />
+            <TabsTrigger value="snacks" className="flex items-center justify-center gap-1">
+              <Sandwich className="h-4 w-4" />
               <span className="hidden sm:inline">Snacks</span>
             </TabsTrigger>
           </TabsList>
@@ -179,7 +164,10 @@ const QRScanner = () => {
             <TabsContent key={purpose} value={purpose}>
               <Card>
                 <CardHeader>
-                  <CardTitle>{getScanPurposeTitle(purpose)}</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    {getScanPurposeIcon(purpose)}
+                    {getScanPurposeTitle(purpose)}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {scanning ? (
@@ -189,7 +177,15 @@ const QRScanner = () => {
                         onResult={handleScan}
                         className="w-full h-full"
                         scanDelay={500}
+                        ViewFinder={() => <div className="border-2 border-primary w-1/2 h-1/2 absolute top-1/4 left-1/4 z-10 rounded-lg" />}
                       />
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setScanning(false)} 
+                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20"
+                      >
+                        Cancel
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -217,7 +213,7 @@ const QRScanner = () => {
                     
                       <Button 
                         onClick={() => startScanning(purpose as "entry" | "lunch" | "dinner" | "snacks")} 
-                        className="w-full"
+                        className="w-full flex items-center justify-center gap-2"
                       >
                         {getScanPurposeIcon(purpose)}
                         Start Scanning for {getScanPurposeTitle(purpose)}
@@ -229,12 +225,6 @@ const QRScanner = () => {
                     <div className="p-4 border border-red-200 bg-red-50 rounded-md">
                       <p className="text-red-700">Team not found. Please try scanning again.</p>
                     </div>
-                  )}
-
-                  {scanning && (
-                    <Button variant="outline" onClick={() => setScanning(false)} className="w-full">
-                      Cancel Scanning
-                    </Button>
                   )}
 
                   {scannedTeam && !scanning && (
@@ -270,30 +260,6 @@ const QRScanner = () => {
           ))}
         </Tabs>
       </div>
-
-      <Dialog open={scanning} onOpenChange={setScanning}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Scan QR Code</DialogTitle>
-            <DialogDescription>
-              {scanPurpose === "entry" 
-                ? "Scan a team's QR code to register their attendance."
-                : `Scanning for ${scanPurpose} check-in. Status will be marked as ${mealAction}.`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative border rounded-md overflow-hidden aspect-square">
-            <QrReader
-              constraints={{ facingMode: "environment" }}
-              onResult={handleScan}
-              className="w-full h-full"
-              scanDelay={500}
-            />
-          </div>
-          <Button variant="outline" onClick={() => setScanning(false)}>
-            Cancel
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
