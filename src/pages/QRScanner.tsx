@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getCurrentUser, updateTeamFoodStatus, getTeam } from "@/lib/data";
 import { Team } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,15 +21,27 @@ const QRScanner = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Redirect non-admin users
   useEffect(() => {
     if (!user) {
       navigate("/");
+      return;
     }
-  }, [user, navigate]);
+    
+    if (user.role !== "admin") {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can access the QR scanner.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    }
+  }, [user, navigate, toast]);
 
   const handleScan = (result: any) => {
     if (result?.text) {
       try {
+        console.log("QR Scan result:", result.text);
         const scannedData = JSON.parse(result.text);
         
         // Validate QR data
@@ -55,6 +68,7 @@ const QRScanner = () => {
           }
         }
       } catch (error) {
+        console.error("QR Scan error:", error);
         toast({
           title: "Invalid QR Code",
           description: "The scanned QR code is not valid.",
@@ -78,7 +92,7 @@ const QRScanner = () => {
     }
   };
 
-  if (!user) return null;
+  if (!user || user.role !== "admin") return null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -105,6 +119,7 @@ const QRScanner = () => {
                       constraints={{ facingMode: "environment" }}
                       onResult={handleScan}
                       className="w-full h-full"
+                      scanDelay={500}
                     />
                   </div>
                 ) : (
@@ -226,12 +241,14 @@ const QRScanner = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Scan QR Code</DialogTitle>
+            <DialogDescription>Position the QR code within the scanner area.</DialogDescription>
           </DialogHeader>
           <div className="relative border rounded-md overflow-hidden aspect-square">
             <QrReader
               constraints={{ facingMode: "environment" }}
               onResult={handleScan}
               className="w-full h-full"
+              scanDelay={500}
             />
           </div>
           <Button variant="outline" onClick={() => setScanning(false)}>
