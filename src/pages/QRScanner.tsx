@@ -14,6 +14,7 @@ import { QrReader } from "react-qr-reader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { QrCode, Utensils, Cake, Sandwich } from "lucide-react";
 
 const QRScanner = () => {
   const [user, setUser] = useState(getCurrentUser());
@@ -21,7 +22,7 @@ const QRScanner = () => {
   const [scannedTeam, setScannedTeam] = useState<Team | null>(null);
   const [teamNotFound, setTeamNotFound] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<"lunch" | "dinner" | "snacks">("lunch");
-  const [scanPurpose, setScanPurpose] = useState<"registration" | "meal">("registration");
+  const [scanPurpose, setScanPurpose] = useState<"entry" | "lunch" | "dinner" | "snacks">("entry");
   const [mealAction, setMealAction] = useState<"valid" | "invalid">("valid");
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -63,14 +64,14 @@ const QRScanner = () => {
             });
             
             // If scanning for meal purposes, automatically update meal status
-            if (scanPurpose === "meal") {
-              const updatedTeam = updateTeamFoodStatus(team.id, selectedMeal, mealAction);
+            if (scanPurpose === "lunch" || scanPurpose === "dinner" || scanPurpose === "snacks") {
+              const updatedTeam = updateTeamFoodStatus(team.id, scanPurpose, mealAction);
               
               if (updatedTeam) {
                 setScannedTeam(updatedTeam);
                 toast({
                   title: "Status Updated Automatically",
-                  description: `${selectedMeal.charAt(0).toUpperCase() + selectedMeal.slice(1)} status updated to ${mealAction}.`,
+                  description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${mealAction}.`,
                 });
               }
             }
@@ -110,9 +111,39 @@ const QRScanner = () => {
     }
   };
 
-  const startScanning = (purpose: "registration" | "meal") => {
+  const startScanning = (purpose: "entry" | "lunch" | "dinner" | "snacks") => {
     setScanPurpose(purpose);
     setScanning(true);
+  };
+
+  const getScanPurposeIcon = (purpose: string) => {
+    switch (purpose) {
+      case "entry":
+        return <QrCode className="mr-2 h-4 w-4" />;
+      case "lunch":
+        return <Utensils className="mr-2 h-4 w-4" />;
+      case "dinner":
+        return <Cake className="mr-2 h-4 w-4" />;
+      case "snacks":
+        return <Sandwich className="mr-2 h-4 w-4" />;
+      default:
+        return <QrCode className="mr-2 h-4 w-4" />;
+    }
+  };
+
+  const getScanPurposeTitle = (purpose: string) => {
+    switch (purpose) {
+      case "entry":
+        return "Entry Registration";
+      case "lunch":
+        return "Lunch Check-in";
+      case "dinner":
+        return "Dinner Check-in";
+      case "snacks":
+        return "Snacks Check-in";
+      default:
+        return "Scan QR Code";
+    }
   };
 
   if (!user || user.role !== "admin") return null;
@@ -124,168 +155,119 @@ const QRScanner = () => {
       <div className="container mx-auto p-4 flex-grow">
         <h1 className="text-2xl font-bold mb-6">QR Scanner</h1>
 
-        <Tabs defaultValue="scan" className="max-w-3xl mx-auto">
-          <TabsList className="grid grid-cols-2 mb-8">
-            <TabsTrigger value="scan">Scan QR Code</TabsTrigger>
-            <TabsTrigger value="meal">Update Meal Status</TabsTrigger>
+        <Tabs defaultValue="entry" className="max-w-3xl mx-auto">
+          <TabsList className="grid grid-cols-4 mb-8">
+            <TabsTrigger value="entry" className="flex items-center justify-center">
+              <QrCode className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Entry</span>
+            </TabsTrigger>
+            <TabsTrigger value="lunch" className="flex items-center justify-center">
+              <Utensils className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Lunch</span>
+            </TabsTrigger>
+            <TabsTrigger value="dinner" className="flex items-center justify-center">
+              <Cake className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Dinner</span>
+            </TabsTrigger>
+            <TabsTrigger value="snacks" className="flex items-center justify-center">
+              <Sandwich className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Snacks</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="scan">
-            <Card>
-              <CardHeader>
-                <CardTitle>Scan Team QR Code</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {scanning ? (
-                  <div className="relative border rounded-md overflow-hidden aspect-square max-w-sm mx-auto">
-                    <QrReader
-                      constraints={{ facingMode: "environment" }}
-                      onResult={handleScan}
-                      className="w-full h-full"
-                      scanDelay={500}
-                    />
-                  </div>
-                ) : (
-                  <Button onClick={() => startScanning("registration")} className="w-full">
-                    Start Scanning
-                  </Button>
-                )}
+          {["entry", "lunch", "dinner", "snacks"].map((purpose) => (
+            <TabsContent key={purpose} value={purpose}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{getScanPurposeTitle(purpose)}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {scanning ? (
+                    <div className="relative border rounded-md overflow-hidden aspect-square max-w-sm mx-auto">
+                      <QrReader
+                        constraints={{ facingMode: "environment" }}
+                        onResult={handleScan}
+                        className="w-full h-full"
+                        scanDelay={500}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {purpose !== "entry" && (
+                        <div className="p-4 border rounded-md mb-4">
+                          <h3 className="text-lg font-medium mb-4">Configure Status Update</h3>
+                          <div className="space-y-4">
+                            <RadioGroup 
+                              value={mealAction} 
+                              onValueChange={(value: "valid" | "invalid") => setMealAction(value)}
+                              className="flex space-x-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="valid" id={`valid-${purpose}`} />
+                                <label htmlFor={`valid-${purpose}`}>Valid</label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="invalid" id={`invalid-${purpose}`} />
+                                <label htmlFor={`invalid-${purpose}`}>Invalid</label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        </div>
+                      )}
+                    
+                      <Button 
+                        onClick={() => startScanning(purpose as "entry" | "lunch" | "dinner" | "snacks")} 
+                        className="w-full"
+                      >
+                        {getScanPurposeIcon(purpose)}
+                        Start Scanning for {getScanPurposeTitle(purpose)}
+                      </Button>
+                    </>
+                  )}
 
-                {teamNotFound && (
-                  <div className="p-4 border border-red-200 bg-red-50 rounded-md">
-                    <p className="text-red-700">Team not found. Please try scanning again.</p>
-                  </div>
-                )}
+                  {teamNotFound && (
+                    <div className="p-4 border border-red-200 bg-red-50 rounded-md">
+                      <p className="text-red-700">Team not found. Please try scanning again.</p>
+                    </div>
+                  )}
 
-                {scanning && (
-                  <Button variant="outline" onClick={() => setScanning(false)} className="w-full">
-                    Cancel Scanning
-                  </Button>
-                )}
-
-                {scannedTeam && scanPurpose === "registration" && (
-                  <div className="mt-6 p-4 border border-green-200 bg-green-50 rounded-md">
-                    <h3 className="font-medium text-green-800 mb-2">Team Registered Successfully</h3>
-                    <p className="text-sm">Team Name: {scannedTeam.name}</p>
-                    <p className="text-sm">Leader: {scannedTeam.leader}</p>
-                    <p className="text-sm">Members: {scannedTeam.members.length}</p>
-                    <Button className="mt-4 w-full" onClick={() => setScannedTeam(null)}>
-                      Scan Another Team
+                  {scanning && (
+                    <Button variant="outline" onClick={() => setScanning(false)} className="w-full">
+                      Cancel Scanning
                     </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  )}
 
-          <TabsContent value="meal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Update Meal Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!scanning && !scannedTeam ? (
-                  <div className="space-y-6">
-                    <div className="p-4 border rounded-md">
-                      <h3 className="text-lg font-medium mb-4">Configure Meal Status Update</h3>
+                  {scannedTeam && !scanning && (
+                    <div className="mt-6 space-y-6">
+                      <TeamCard team={scannedTeam} isAdmin={true} />
                       
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium mb-2 block">Select Meal</label>
-                          <Select
-                            value={selectedMeal}
-                            onValueChange={(value: "lunch" | "dinner" | "snacks") => setSelectedMeal(value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a meal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="lunch">Lunch</SelectItem>
-                              <SelectItem value="dinner">Dinner</SelectItem>
-                              <SelectItem value="snacks">Snacks</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm font-medium mb-2 block">Mark Status As</label>
-                          <RadioGroup 
-                            value={mealAction} 
-                            onValueChange={(value: "valid" | "invalid") => setMealAction(value)}
-                            className="flex space-x-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="valid" id="valid" />
-                              <label htmlFor="valid">Valid</label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="invalid" id="invalid" />
-                              <label htmlFor="invalid">Invalid</label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                        
-                        <Button 
-                          onClick={() => startScanning("meal")} 
-                          className="w-full mt-2"
-                        >
-                          Start Scanning QR Codes
-                        </Button>
+                      <div className="p-4 border border-green-200 bg-green-50 rounded-md">
+                        <h3 className="font-medium text-green-800 mb-2">
+                          {purpose === "entry" ? "Team Registered Successfully" : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} Status Updated`}
+                        </h3>
+                        <p className="text-sm">
+                          {purpose === "entry" 
+                            ? `Team ${scannedTeam.name} has been registered for the event.`
+                            : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} status for ${scannedTeam.name} has been marked as ${mealAction}.`
+                          }
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                ) : scannedTeam ? (
-                  <div className="space-y-6">
-                    <TeamCard team={scannedTeam} isAdmin={false} />
-
-                    <div className="p-4 border border-green-200 bg-green-50 rounded-md">
-                      <h3 className="font-medium text-green-800 mb-2">Status Updated Successfully</h3>
-                      <p className="text-sm">
-                        {selectedMeal.charAt(0).toUpperCase() + selectedMeal.slice(1)} status for {scannedTeam.name} has been marked as {mealAction}.
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Button
-                        variant="secondary"
+                      
+                      <Button 
                         onClick={() => {
                           setScannedTeam(null);
-                          setScanning(true);
+                          startScanning(purpose as "entry" | "lunch" | "dinner" | "snacks");
                         }}
                         className="w-full"
                       >
                         Scan Another Team
                       </Button>
-                      
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setScannedTeam(null);
-                          setScanning(false);
-                        }}
-                        className="w-full"
-                      >
-                        Configure Different Meal
-                      </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      Scanning QR codes for {selectedMeal} with status: {mealAction}
-                    </p>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setScanning(false)}
-                      className="mt-4"
-                    >
-                      Cancel and Configure
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
 
@@ -294,9 +276,9 @@ const QRScanner = () => {
           <DialogHeader>
             <DialogTitle>Scan QR Code</DialogTitle>
             <DialogDescription>
-              {scanPurpose === "registration" 
+              {scanPurpose === "entry" 
                 ? "Scan a team's QR code to register their attendance."
-                : `Scanning to mark ${selectedMeal} as ${mealAction} for teams.`}
+                : `Scanning for ${scanPurpose} check-in. Status will be marked as ${mealAction}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="relative border rounded-md overflow-hidden aspect-square">
