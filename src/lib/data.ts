@@ -1,31 +1,65 @@
 import { Team, User } from "./types";
 import { v4 as uuidv4 } from "uuid";
 
-// Mock data for initial users
-let users: User[] = [
-  {
-    id: "1",
-    username: "admin",
-    password: "admin123",
-    role: "admin",
-  },
-  {
-    id: "2",
-    username: "volunteer",
-    password: "volunteer123",
-    role: "volunteer",
+// Initialize data from localStorage or use defaults
+const getUsersFromStorage = (): User[] => {
+  const storedUsers = localStorage.getItem("hackzilla_users");
+  if (storedUsers) {
+    return JSON.parse(storedUsers);
   }
-];
 
-// Mock data for teams
-let teams: Team[] = [];
+  // Default users if no data in storage
+  return [
+    {
+      id: "1",
+      username: "admin",
+      password: "admin123",
+      role: "admin",
+    },
+    {
+      id: "2",
+      username: "volunteer",
+      password: "volunteer123",
+      role: "volunteer",
+    }
+  ];
+};
+
+const getTeamsFromStorage = (): Team[] => {
+  const storedTeams = localStorage.getItem("hackzilla_teams");
+  return storedTeams ? JSON.parse(storedTeams) : [];
+};
+
+// Load initial data
+let users: User[] = getUsersFromStorage();
+let teams: Team[] = getTeamsFromStorage();
+
+// Store team ID tracking in localStorage
+const getLastTeamIdNumber = (): number => {
+  const storedId = localStorage.getItem("hackzilla_lastTeamId");
+  return storedId ? parseInt(storedId) : 2500;
+};
 
 // Keep track of the last team ID number - Starting from 2500 so the first team will be 2501
-let lastTeamIdNumber = 2500;
+let lastTeamIdNumber = getLastTeamIdNumber();
+
+// Save data to localStorage
+const saveUsers = () => {
+  localStorage.setItem("hackzilla_users", JSON.stringify(users));
+};
+
+const saveTeams = () => {
+  localStorage.setItem("hackzilla_teams", JSON.stringify(teams));
+};
+
+const saveLastTeamId = () => {
+  localStorage.setItem("hackzilla_lastTeamId", lastTeamIdNumber.toString());
+};
 
 // Get next team ID
 const getNextTeamId = (): string => {
   lastTeamIdNumber += 1;
+  saveLastTeamId();
   return lastTeamIdNumber.toString();
 };
 
@@ -58,6 +92,7 @@ export const addUser = (username: string, password: string, role: "admin" | "vol
     role,
   };
   users.push(newUser);
+  saveUsers();
   return newUser;
 };
 
@@ -81,6 +116,7 @@ export const addTeam = (team: Omit<Team, "id" | "createdAt">): Team => {
     createdAt: new Date(),
   };
   teams.push(newTeam);
+  saveTeams();
   return newTeam;
 };
 
@@ -94,6 +130,7 @@ export const addBulkTeams = (teamsData: Omit<Team, "id" | "createdAt">[]): Team[
     teams.push(newTeam);
     return newTeam;
   });
+  saveTeams();
   return newTeams;
 };
 
@@ -101,6 +138,7 @@ export const updateTeam = (id: string, data: Partial<Team>): Team | undefined =>
   const index = teams.findIndex((team) => team.id === id);
   if (index !== -1) {
     teams[index] = { ...teams[index], ...data };
+    saveTeams();
     return teams[index];
   }
   return undefined;
@@ -109,7 +147,11 @@ export const updateTeam = (id: string, data: Partial<Team>): Team | undefined =>
 export const deleteTeam = (id: string): boolean => {
   const initialLength = teams.length;
   teams = teams.filter((team) => team.id !== id);
-  return teams.length < initialLength;
+  if (teams.length < initialLength) {
+    saveTeams();
+    return true;
+  }
+  return false;
 };
 
 export const updateTeamFoodStatus = (
@@ -128,6 +170,6 @@ export const updateTeamFoodStatus = (
       [meal]: status,
     },
   };
-
+  saveTeams();
   return teams[teamIndex];
 };
