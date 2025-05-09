@@ -91,11 +91,6 @@ const Index = () => {
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="text-center mt-6 text-sm text-muted-foreground space-y-1">
-          <p>Admin login: username: admin, password: admin123</p>
-          <p>Volunteer login: username: volunteer, password: volunteer123</p>
-        </div>
       </div>
     </div>
   );

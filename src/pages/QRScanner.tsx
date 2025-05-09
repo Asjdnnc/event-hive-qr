@@ -63,10 +63,17 @@ const QRScanner = () => {
               if (updatedTeam) {
                 setScannedTeam(updatedTeam);
                 toast({
-                  title: "Status Updated Automatically",
+                  title: "Status Updated",
                   description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${status}.`,
                 });
               }
+            }
+            // For entry registration, just show the team info
+            else if (scanPurpose === "entry") {
+              toast({
+                title: "Entry Registered",
+                description: `Team ${team.name} has been registered for entry.`,
+              });
             }
           } else {
             setTeamNotFound(true);
@@ -78,9 +85,14 @@ const QRScanner = () => {
               variant: "destructive",
             });
           }
+        } else {
+          throw new Error("Invalid QR code data");
         }
       } catch (error) {
         console.error("QR Scan error:", error);
+        setTeamNotFound(true);
+        setScannedTeam(null);
+        
         toast({
           title: "Invalid QR Code",
           description: "The scanned QR code is not valid.",
@@ -93,6 +105,9 @@ const QRScanner = () => {
   const startScanning = (purpose: "entry" | "lunch" | "dinner" | "snacks") => {
     setScanPurpose(purpose);
     setScanning(true);
+    // Reset previous scan results when starting a new scan
+    setScannedTeam(null);
+    setTeamNotFound(false);
   };
 
   const getScanPurposeIcon = (purpose: string) => {
@@ -231,7 +246,7 @@ const QRScanner = () => {
                     </>
                   )}
 
-                  {teamNotFound && (
+                  {teamNotFound && !scanning && (
                     <div className="p-4 border border-red-200 bg-red-50 rounded-md">
                       <p className="text-red-700">Team not found. Please try scanning again.</p>
                     </div>
@@ -243,11 +258,11 @@ const QRScanner = () => {
                       
                       <div className="p-4 border border-green-200 bg-green-50 rounded-md">
                         <h3 className="font-medium text-green-800 mb-2">
-                          {purpose === "entry" ? "Team Registered Successfully" : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} Status Updated`}
+                          {purpose === "entry" ? "Entry Registered Successfully" : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} Status Updated`}
                         </h3>
                         <p className="text-sm">
                           {purpose === "entry" 
-                            ? `Team ${scannedTeam.name} has been registered for the event.`
+                            ? `Team ${scannedTeam.name} has been registered for entry.`
                             : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} status for ${scannedTeam.name} has been marked as ${isAdmin ? mealAction : "valid"}.`
                           }
                         </p>
