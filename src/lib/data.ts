@@ -9,6 +9,12 @@ let users: User[] = [
     username: "admin",
     password: "admin123",
     role: "admin",
+  },
+  {
+    id: "2",
+    username: "volunteer",
+    password: "volunteer123",
+    role: "volunteer",
   }
 ];
 

@@ -25,21 +25,13 @@ const QRScanner = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const isAdmin = user?.role === "admin";
 
-  // Redirect non-admin users
+  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate("/");
       return;
-    }
-    
-    if (user.role !== "admin") {
-      toast({
-        title: "Access Denied",
-        description: "Only administrators can access the QR scanner.",
-        variant: "destructive",
-      });
-      navigate("/dashboard");
     }
   }, [user, navigate, toast]);
 
@@ -64,13 +56,15 @@ const QRScanner = () => {
             
             // If scanning for meal purposes, automatically update meal status
             if (scanPurpose === "lunch" || scanPurpose === "dinner" || scanPurpose === "snacks") {
-              const updatedTeam = updateTeamFoodStatus(team.id, scanPurpose, mealAction);
+              // Volunteers can only mark as valid
+              const status = user?.role === "volunteer" ? "valid" : mealAction;
+              const updatedTeam = updateTeamFoodStatus(team.id, scanPurpose, status);
               
               if (updatedTeam) {
                 setScannedTeam(updatedTeam);
                 toast({
                   title: "Status Updated Automatically",
-                  description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${mealAction}.`,
+                  description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${status}.`,
                 });
               }
             }
@@ -131,7 +125,7 @@ const QRScanner = () => {
     }
   };
 
-  if (!user || user.role !== "admin") return null;
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -139,6 +133,14 @@ const QRScanner = () => {
 
       <div className="container mx-auto p-4 flex-grow">
         <h1 className="text-2xl font-bold mb-6">QR Scanner</h1>
+        
+        {user.role === "volunteer" && (
+          <div className="bg-yellow-100 p-4 rounded-lg mb-6 shadow-sm">
+            <p className="text-yellow-800">
+              <strong>Volunteer Mode:</strong> You can scan team QR codes to mark meals as valid.
+            </p>
+          </div>
+        )}
 
         <Tabs defaultValue="entry" className="max-w-3xl mx-auto">
           <TabsList className="grid grid-cols-4 mb-8">
@@ -189,7 +191,7 @@ const QRScanner = () => {
                     </div>
                   ) : (
                     <>
-                      {purpose !== "entry" && (
+                      {purpose !== "entry" && isAdmin && (
                         <div className="p-4 border rounded-md mb-4">
                           <h3 className="text-lg font-medium mb-4">Configure Status Update</h3>
                           <div className="space-y-4">
@@ -208,6 +210,14 @@ const QRScanner = () => {
                               </div>
                             </RadioGroup>
                           </div>
+                        </div>
+                      )}
+                      
+                      {purpose !== "entry" && !isAdmin && (
+                        <div className="p-4 border border-green-100 bg-green-50 rounded-md mb-4">
+                          <p className="text-green-800">
+                            As a volunteer, scanning a QR code will automatically mark {purpose} as valid.
+                          </p>
                         </div>
                       )}
                     
@@ -229,7 +239,7 @@ const QRScanner = () => {
 
                   {scannedTeam && !scanning && (
                     <div className="mt-6 space-y-6">
-                      <TeamCard team={scannedTeam} isAdmin={true} />
+                      <TeamCard team={scannedTeam} isAdmin={isAdmin} />
                       
                       <div className="p-4 border border-green-200 bg-green-50 rounded-md">
                         <h3 className="font-medium text-green-800 mb-2">
@@ -238,7 +248,7 @@ const QRScanner = () => {
                         <p className="text-sm">
                           {purpose === "entry" 
                             ? `Team ${scannedTeam.name} has been registered for the event.`
-                            : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} status for ${scannedTeam.name} has been marked as ${mealAction}.`
+                            : `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} status for ${scannedTeam.name} has been marked as ${isAdmin ? mealAction : "valid"}.`
                           }
                         </p>
                       </div>

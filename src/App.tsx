@@ -39,7 +39,7 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/qr-scanner" element={
-            <ProtectedRoute requiredRole={["admin"]}>
+            <ProtectedRoute requiredRole={["admin", "volunteer"]}>
               <QRScanner />
             </ProtectedRoute>
           } />

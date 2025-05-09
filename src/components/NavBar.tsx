@@ -12,8 +12,8 @@ interface NavBarProps {
 
 const NavBar: React.FC<NavBarProps> = ({ userRole }) => {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -68,13 +68,6 @@ const NavBar: React.FC<NavBarProps> = ({ userRole }) => {
                       Teams
                     </Link>
                     <Link 
-                      to="/qr-scanner" 
-                      className="block py-2 px-4 hover:bg-primary/90 rounded-md"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Scan QR
-                    </Link>
-                    <Link 
                       to="/admin-management" 
                       className="block py-2 px-4 hover:bg-primary/90 rounded-md"
                       onClick={() => setMenuOpen(false)}
@@ -83,6 +76,13 @@ const NavBar: React.FC<NavBarProps> = ({ userRole }) => {
                     </Link>
                   </>
                 )}
+                <Link 
+                  to="/qr-scanner" 
+                  className="block py-2 px-4 hover:bg-primary/90 rounded-md"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Scan QR
+                </Link>
                 <Button 
                   variant="outline" 
                   className="mt-2 w-full"
@@ -109,14 +109,14 @@ const NavBar: React.FC<NavBarProps> = ({ userRole }) => {
                 <Link to="/team-management" className="hover:underline">
                   Teams
                 </Link>
-                <Link to="/qr-scanner" className="hover:underline">
-                  Scan QR
-                </Link>
                 <Link to="/admin-management" className="hover:underline">
                   Users
                 </Link>
               </>
             )}
+            <Link to="/qr-scanner" className="hover:underline">
+              Scan QR
+            </Link>
             <Button variant="outline" onClick={handleLogout}>
               Logout
             </Button>
