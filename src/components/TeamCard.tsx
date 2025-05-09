@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import QRCodeComponent from "./QRCode";
 import { updateTeamFoodStatus } from "@/lib/data";
 import { useToast } from "@/components/ui/use-toast";
+import { Check, X } from "lucide-react";
 
 interface TeamCardProps {
   team: Team;
@@ -64,78 +65,111 @@ const TeamCard: React.FC<TeamCardProps> = ({
           </div>
           
           <div className="grid grid-cols-3 gap-2 pt-2">
-            <div className="text-center">
-              <p className="text-xs font-medium">Lunch</p>
-              {isAdmin ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Badge variant="outline" className={`status-${team.foodStatus.lunch} cursor-pointer`}>
+            {isAdmin ? (
+              <>
+                <div className="text-center">
+                  <p className="text-xs font-medium">Lunch</p>
+                  <div className="flex flex-col items-center space-y-1">
+                    <Badge variant="outline" className={`status-${team.foodStatus.lunch}`}>
                       {team.foodStatus.lunch}
                     </Badge>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("lunch", "valid")}>
-                      Mark as Valid
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("lunch", "invalid")}>
-                      Mark as Invalid
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Badge variant="outline" className={`status-${team.foodStatus.lunch}`}>
-                  {team.foodStatus.lunch}
-                </Badge>
-              )}
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-medium">Dinner</p>
-              {isAdmin ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Badge variant="outline" className={`status-${team.foodStatus.dinner} cursor-pointer`}>
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.lunch === "valid" ? "default" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("lunch", "valid")}
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.lunch === "invalid" ? "destructive" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("lunch", "invalid")}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-xs font-medium">Dinner</p>
+                  <div className="flex flex-col items-center space-y-1">
+                    <Badge variant="outline" className={`status-${team.foodStatus.dinner}`}>
                       {team.foodStatus.dinner}
                     </Badge>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("dinner", "valid")}>
-                      Mark as Valid
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("dinner", "invalid")}>
-                      Mark as Invalid
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Badge variant="outline" className={`status-${team.foodStatus.dinner}`}>
-                  {team.foodStatus.dinner}
-                </Badge>
-              )}
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-medium">Snacks</p>
-              {isAdmin ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Badge variant="outline" className={`status-${team.foodStatus.snacks} cursor-pointer`}>
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.dinner === "valid" ? "default" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("dinner", "valid")}
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.dinner === "invalid" ? "destructive" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("dinner", "invalid")}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-xs font-medium">Snacks</p>
+                  <div className="flex flex-col items-center space-y-1">
+                    <Badge variant="outline" className={`status-${team.foodStatus.snacks}`}>
                       {team.foodStatus.snacks}
                     </Badge>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("snacks", "valid")}>
-                      Mark as Valid
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleUpdateFoodStatus("snacks", "invalid")}>
-                      Mark as Invalid
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Badge variant="outline" className={`status-${team.foodStatus.snacks}`}>
-                  {team.foodStatus.snacks}
-                </Badge>
-              )}
-            </div>
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.snacks === "valid" ? "default" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("snacks", "valid")}
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={team.foodStatus.snacks === "invalid" ? "destructive" : "outline"} 
+                        className="h-7 w-7 p-0" 
+                        onClick={() => handleUpdateFoodStatus("snacks", "invalid")}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center">
+                  <p className="text-xs font-medium">Lunch</p>
+                  <Badge variant="outline" className={`status-${team.foodStatus.lunch}`}>
+                    {team.foodStatus.lunch}
+                  </Badge>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-medium">Dinner</p>
+                  <Badge variant="outline" className={`status-${team.foodStatus.dinner}`}>
+                    {team.foodStatus.dinner}
+                  </Badge>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-medium">Snacks</p>
+                  <Badge variant="outline" className={`status-${team.foodStatus.snacks}`}>
+                    {team.foodStatus.snacks}
+                  </Badge>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </CardContent>

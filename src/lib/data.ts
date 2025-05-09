@@ -20,7 +20,7 @@ let users: User[] = [
 // Mock data for teams
 let teams: Team[] = [];
 
-// Keep track of the last team ID number
+// Keep track of the last team ID number - Starting from 2500 so the first team will be 2501
 let lastTeamIdNumber = 2500;
 
 // Get next team ID

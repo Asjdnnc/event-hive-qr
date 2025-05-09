@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { addBulkTeams } from "@/lib/data";
 import { Team, TeamMember } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -130,6 +131,36 @@ const BulkTeamRegistration = () => {
           Upload a CSV file with team details. The CSV should include columns for team name, 
           team leader, member name, and college name.
         </p>
+        
+        <Alert>
+          <AlertTitle>CSV Format Instructions</AlertTitle>
+          <AlertDescription className="mt-2">
+            <p>Your CSV file should follow this format:</p>
+            <pre className="mt-2 mb-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-md overflow-x-auto text-xs">
+              TeamName,Leader,MemberName,College<br/>
+              Team1,John Doe,Member1,College A<br/>
+              Team1,,Member2,College B<br/>
+              Team2,Jane Smith,Member1,College C<br/>
+              Team2,,Member2,College D
+            </pre>
+            <p className="text-sm">
+              <strong>Notes:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>The first row must be the header row.</li>
+                <li>Each team should have at least one row with the team name and leader.</li>
+                <li>Additional members can be added in subsequent rows, leaving the TeamName and Leader fields empty.</li>
+                <li>Accepted column names (case-insensitive):
+                  <ul className="list-disc list-inside ml-4">
+                    <li>Team: "TeamName", "Team Name", "Name"</li>
+                    <li>Leader: "Leader", "TeamLeader", "Team Leader"</li>
+                    <li>Member: "MemberName", "Member Name", "Member"</li>
+                    <li>College: "College", "CollegeName", "College Name"</li>
+                  </ul>
+                </li>
+              </ul>
+            </p>
+          </AlertDescription>
+        </Alert>
         
         <div className="grid gap-4">
           <Input
