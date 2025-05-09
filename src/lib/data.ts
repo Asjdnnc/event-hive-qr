@@ -1,4 +1,3 @@
-
 import { Team, User } from "./types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -20,6 +19,15 @@ let users: User[] = [
 
 // Mock data for teams
 let teams: Team[] = [];
+
+// Keep track of the last team ID number
+let lastTeamIdNumber = 2500;
+
+// Get next team ID
+const getNextTeamId = (): string => {
+  lastTeamIdNumber += 1;
+  return lastTeamIdNumber.toString();
+};
 
 // User Service
 export const authenticateUser = (username: string, password: string): User | null => {
@@ -69,11 +77,24 @@ export const getAllTeams = (): Team[] => {
 export const addTeam = (team: Omit<Team, "id" | "createdAt">): Team => {
   const newTeam: Team = {
     ...team,
-    id: uuidv4(),
+    id: getNextTeamId(),
     createdAt: new Date(),
   };
   teams.push(newTeam);
   return newTeam;
+};
+
+export const addBulkTeams = (teamsData: Omit<Team, "id" | "createdAt">[]): Team[] => {
+  const newTeams: Team[] = teamsData.map(team => {
+    const newTeam: Team = {
+      ...team,
+      id: getNextTeamId(),
+      createdAt: new Date(),
+    };
+    teams.push(newTeam);
+    return newTeam;
+  });
+  return newTeams;
 };
 
 export const updateTeam = (id: string, data: Partial<Team>): Team | undefined => {

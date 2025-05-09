@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { addTeam, getCurrentUser } from "@/lib/data";
 import { Team, TeamMember } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import NavBar from "@/components/NavBar";
 import QRCodeComponent from "@/components/QRCode";
+import BulkTeamRegistration from "@/components/BulkTeamRegistration";
 
 const TeamRegistration = () => {
   const [user, setUser] = useState(getCurrentUser());
@@ -133,94 +135,107 @@ const TeamRegistration = () => {
             </div>
           </div>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Register a New Team</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="text-sm font-medium">
-                      Team Name
-                    </label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter team name"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="leader" className="text-sm font-medium">
-                      Team Leader
-                    </label>
-                    <Input
-                      id="leader"
-                      value={leader}
-                      onChange={(e) => setLeader(e.target.value)}
-                      placeholder="Enter team leader name"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Team Members</label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddMember}
-                      >
-                        Add Member
-                      </Button>
-                    </div>
-
-                    {members.map((member, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+          <Tabs defaultValue="single" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="single">Single Registration</TabsTrigger>
+              <TabsTrigger value="bulk">Bulk Registration</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="single">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Register a New Team</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="name" className="text-sm font-medium">
+                          Team Name
+                        </label>
                         <Input
-                          value={member.name}
-                          onChange={(e) =>
-                            handleMemberChange(index, "name", e.target.value)
-                          }
-                          placeholder="Member Name"
+                          id="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Enter team name"
                           required
                         />
-                        <div className="flex space-x-2">
-                          <Input
-                            value={member.collegeName}
-                            onChange={(e) =>
-                              handleMemberChange(index, "collegeName", e.target.value)
-                            }
-                            placeholder="College Name"
-                            required
-                          />
-                          {members.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveMember(index)}
-                              className="shrink-0"
-                            >
-                              ✕
-                            </Button>
-                          )}
-                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <Button type="submit" className="w-full">
-                  Register Team
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                      <div>
+                        <label htmlFor="leader" className="text-sm font-medium">
+                          Team Leader
+                        </label>
+                        <Input
+                          id="leader"
+                          value={leader}
+                          onChange={(e) => setLeader(e.target.value)}
+                          placeholder="Enter team leader name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-medium">Team Members</label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAddMember}
+                          >
+                            Add Member
+                          </Button>
+                        </div>
+
+                        {members.map((member, index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <Input
+                              value={member.name}
+                              onChange={(e) =>
+                                handleMemberChange(index, "name", e.target.value)
+                              }
+                              placeholder="Member Name"
+                              required
+                            />
+                            <div className="flex space-x-2">
+                              <Input
+                                value={member.collegeName}
+                                onChange={(e) =>
+                                  handleMemberChange(index, "collegeName", e.target.value)
+                                }
+                                placeholder="College Name"
+                                required
+                              />
+                              {members.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveMember(index)}
+                                  className="shrink-0"
+                                >
+                                  ✕
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                      Register Team
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="bulk">
+              <BulkTeamRegistration />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>
