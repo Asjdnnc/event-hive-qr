@@ -10,6 +10,7 @@ import { getCurrentUser, getAllUsers, addUser } from "@/lib/data";
 import { User } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import NavBar from "@/components/NavBar";
+import { Search } from "lucide-react";
 
 const AdminManagement = () => {
   const [user, setUser] = useState(getCurrentUser());
@@ -18,6 +19,7 @@ const AdminManagement = () => {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "volunteer">("volunteer");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -81,6 +83,11 @@ const AdminManagement = () => {
     }
   };
 
+  const filteredUsers = users.filter(u => 
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (!user) return null;
 
   return (
@@ -93,8 +100,21 @@ const AdminManagement = () => {
           <Button onClick={() => setIsAddDialogOpen(true)}>Create New User</Button>
         </div>
 
+        <div className="relative mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by username or role..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map((u) => (
+          {filteredUsers.map((u) => (
             <Card key={u.id}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex justify-between items-center">
@@ -111,10 +131,12 @@ const AdminManagement = () => {
           ))}
         </div>
 
-        {users.length === 0 && (
+        {filteredUsers.length === 0 && (
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">No users found.</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? "No users match your search." : "No users found."}
+              </p>
             </CardContent>
           </Card>
         )}
