@@ -9,7 +9,106 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      food_status: {
+        Row: {
+          dinner: string
+          lunch: string
+          snacks: string
+          team_id: string
+        }
+        Insert: {
+          dinner: string
+          lunch: string
+          snacks: string
+          team_id: string
+        }
+        Update: {
+          dinner?: string
+          lunch?: string
+          snacks?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_status_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          role: string
+          username: string
+        }
+        Insert: {
+          id: string
+          role: string
+          username: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          college_name: string
+          id: string
+          name: string
+          team_id: string
+        }
+        Insert: {
+          college_name: string
+          id?: string
+          name: string
+          team_id: string
+        }
+        Update: {
+          college_name?: string
+          id?: string
+          name?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          id: string
+          leader: string
+          name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          leader: string
+          name: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          leader?: string
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
