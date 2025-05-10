@@ -7,10 +7,13 @@ import { Team } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import TeamCard from "@/components/TeamCard";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const Dashboard = () => {
   const [user, setUser] = useState(getCurrentUser());
   const [teams, setTeams] = useState<Team[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -47,6 +50,11 @@ const Dashboard = () => {
       snacksValid,
     });
   }, [navigate, user]);
+
+  const filteredTeams = teams.filter(team => 
+    team.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    team.leader.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -92,14 +100,38 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <h2 className="text-xl font-semibold mb-4">Recent Teams</h2>
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search teams by name or leader..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-4">
+          {searchQuery ? "Search Results" : "Recent Teams"}
+        </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {teams.slice(0, 4).map((team) => (
-            <TeamCard key={team.id} team={team} isAdmin={false} />
+          {(searchQuery ? filteredTeams : teams.slice(0, 4)).map((team) => (
+            <TeamCard key={team.id} team={team} isAdmin={user?.role === "admin"} />
           ))}
         </div>
         
-        {teams.length === 0 && (
+        {filteredTeams.length === 0 && searchQuery && (
+          <div className="text-center p-8">
+            <h3 className="text-lg font-medium">No teams match your search</h3>
+            <p className="text-muted-foreground mt-2">
+              Try using different keywords or check your spelling
+            </p>
+          </div>
+        )}
+        
+        {teams.length === 0 && !searchQuery && (
           <div className="text-center p-8">
             <h3 className="text-lg font-medium">No teams registered yet</h3>
             {user?.role === "admin" && (
