@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,16 @@ const TeamRegistration = () => {
     { name: "", collegeName: "" },
   ]);
   const [registeredTeam, setRegisteredTeam] = useState<Team | null>(null);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  if (!user) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+      return;
+    }
+  }, [user, navigate]);
 
   const handleAddMember = () => {
     setMembers([...members, { name: "", collegeName: "" }]);
@@ -44,8 +47,9 @@ const TeamRegistration = () => {
     setMembers(newMembers);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     // Validate form
     if (!name || !leader || members.some(m => !m.name || !m.collegeName)) {
@@ -54,6 +58,7 @@ const TeamRegistration = () => {
         description: "Please fill in all required fields",
         variant: "destructive",
       });
+      setLoading(false);
       return;
     }
 
@@ -70,19 +75,25 @@ const TeamRegistration = () => {
     };
 
     try {
-      const registeredTeam = addTeam(newTeam);
-      setRegisteredTeam(registeredTeam);
-      
-      toast({
-        title: "Team Registered",
-        description: "The team has been successfully registered.",
-      });
+      const registeredTeam = await addTeam(newTeam);
+      if (registeredTeam) {
+        setRegisteredTeam(registeredTeam);
+        toast({
+          title: "Team Registered",
+          description: "The team has been successfully registered.",
+        });
+      } else {
+        throw new Error("Failed to register team");
+      }
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration Failed",
         description: "An error occurred during team registration.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,6 +103,8 @@ const TeamRegistration = () => {
     setMembers([{ name: "", collegeName: "" }]);
     setRegisteredTeam(null);
   };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -224,8 +237,8 @@ const TeamRegistration = () => {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full">
-                      Register Team
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Registering..." : "Register Team"}
                     </Button>
                   </form>
                 </CardContent>

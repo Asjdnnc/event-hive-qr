@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [user, setUser] = useState(getCurrentUser());
   const [teams, setTeams] = useState<Team[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -31,25 +32,41 @@ const Dashboard = () => {
       return;
     }
 
-    // Fetch teams
-    const allTeams = getAllTeams();
-    setTeams(allTeams);
+    const fetchTeams = async () => {
+      setLoading(true);
+      try {
+        // Fetch teams from Supabase
+        const allTeams = await getAllTeams();
+        setTeams(allTeams);
 
-    // Calculate stats
-    const active = allTeams.filter(team => team.status === "active").length;
-    const lunchValid = allTeams.filter(team => team.foodStatus.lunch === "valid").length;
-    const dinnerValid = allTeams.filter(team => team.foodStatus.dinner === "valid").length;
-    const snacksValid = allTeams.filter(team => team.foodStatus.snacks === "valid").length;
+        // Calculate stats
+        const active = allTeams.filter(team => team.status === "active").length;
+        const lunchValid = allTeams.filter(team => team.foodStatus.lunch === "valid").length;
+        const dinnerValid = allTeams.filter(team => team.foodStatus.dinner === "valid").length;
+        const snacksValid = allTeams.filter(team => team.foodStatus.snacks === "valid").length;
 
-    setStats({
-      total: allTeams.length,
-      active,
-      inactive: allTeams.length - active,
-      lunchValid,
-      dinnerValid,
-      snacksValid,
-    });
-  }, [navigate, user]);
+        setStats({
+          total: allTeams.length,
+          active,
+          inactive: allTeams.length - active,
+          lunchValid,
+          dinnerValid,
+          snacksValid,
+        });
+      } catch (error) {
+        console.error("Error fetching teams:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load teams. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, [navigate, toast, user]);
 
   const filteredTeams = teams.filter(team => 
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -116,13 +133,20 @@ const Dashboard = () => {
         <h2 className="text-xl font-semibold mb-4">
           {searchQuery ? "Search Results" : "Recent Teams"}
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {(searchQuery ? filteredTeams : teams.slice(0, 4)).map((team) => (
-            <TeamCard key={team.id} team={team} isAdmin={user?.role === "admin"} />
-          ))}
-        </div>
         
-        {filteredTeams.length === 0 && searchQuery && (
+        {loading ? (
+          <div className="text-center p-8">
+            <p className="text-muted-foreground">Loading teams...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {(searchQuery ? filteredTeams : teams.slice(0, 4)).map((team) => (
+              <TeamCard key={team.id} team={team} isAdmin={user?.role === "admin"} />
+            ))}
+          </div>
+        )}
+        
+        {filteredTeams.length === 0 && searchQuery && !loading && (
           <div className="text-center p-8">
             <h3 className="text-lg font-medium">No teams match your search</h3>
             <p className="text-muted-foreground mt-2">
@@ -131,7 +155,7 @@ const Dashboard = () => {
           </div>
         )}
         
-        {teams.length === 0 && !searchQuery && (
+        {teams.length === 0 && !searchQuery && !loading && (
           <div className="text-center p-8">
             <h3 className="text-lg font-medium">No teams registered yet</h3>
             {user?.role === "admin" && (

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +21,7 @@ const QRScanner = () => {
   const [selectedMeal, setSelectedMeal] = useState<"lunch" | "dinner" | "snacks">("lunch");
   const [scanPurpose, setScanPurpose] = useState<"entry" | "lunch" | "dinner" | "snacks">("entry");
   const [mealAction, setMealAction] = useState<"valid" | "invalid">("valid");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -35,15 +35,16 @@ const QRScanner = () => {
     }
   }, [user, navigate, toast]);
 
-  const handleScan = (result: any) => {
+  const handleScan = async (result: any) => {
     if (result?.text) {
       try {
+        setLoading(true);
         console.log("QR Scan result:", result.text);
         const scannedData = JSON.parse(result.text);
         
         // Validate QR data
         if (scannedData?.id) {
-          const team = getTeam(scannedData.id);
+          const team = await getTeam(scannedData.id);
           if (team) {
             setScannedTeam(team);
             setTeamNotFound(false);
@@ -58,13 +59,24 @@ const QRScanner = () => {
             if (scanPurpose === "lunch" || scanPurpose === "dinner" || scanPurpose === "snacks") {
               // Volunteers can only mark as valid
               const status = user?.role === "volunteer" ? "valid" : mealAction;
-              const updatedTeam = updateTeamFoodStatus(team.id, scanPurpose, status);
-              
-              if (updatedTeam) {
-                setScannedTeam(updatedTeam);
+              try {
+                const updatedTeam = await updateTeamFoodStatus(team.id, scanPurpose, status);
+                
+                if (updatedTeam) {
+                  setScannedTeam(updatedTeam);
+                  toast({
+                    title: "Status Updated",
+                    description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${status}.`,
+                  });
+                } else {
+                  throw new Error("Failed to update food status");
+                }
+              } catch (error) {
+                console.error("Food status update error:", error);
                 toast({
-                  title: "Status Updated",
-                  description: `${scanPurpose.charAt(0).toUpperCase() + scanPurpose.slice(1)} status updated to ${status}.`,
+                  title: "Update Failed",
+                  description: "Failed to update food status.",
+                  variant: "destructive",
                 });
               }
             }
@@ -98,6 +110,8 @@ const QRScanner = () => {
           description: "The scanned QR code is not valid.",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -182,12 +196,22 @@ const QRScanner = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    {getScanPurposeIcon(purpose)}
-                    {getScanPurposeTitle(purpose)}
+                    {purpose === "entry" ? <QrCode className="h-4 w-4" /> : 
+                     purpose === "lunch" ? <Utensils className="h-4 w-4" /> :
+                     purpose === "dinner" ? <Cake className="h-4 w-4" /> : 
+                     <Sandwich className="h-4 w-4" />}
+                    {purpose === "entry" ? "Entry Registration" :
+                     purpose === "lunch" ? "Lunch Check-in" :
+                     purpose === "dinner" ? "Dinner Check-in" :
+                     "Snacks Check-in"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {scanning ? (
+                  {loading ? (
+                    <div className="text-center p-6">
+                      <p>Processing...</p>
+                    </div>
+                  ) : scanning ? (
                     <div className="relative border rounded-md overflow-hidden aspect-square max-w-sm mx-auto">
                       <QrReader
                         constraints={{ facingMode: "environment" }}

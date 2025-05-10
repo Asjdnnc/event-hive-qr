@@ -20,6 +20,7 @@ const AdminManagement = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "volunteer">("volunteer");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,12 +38,24 @@ const AdminManagement = () => {
     fetchUsers();
   }, [user, navigate]);
 
-  const fetchUsers = () => {
-    const allUsers = getAllUsers();
-    setUsers(allUsers);
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUsername || !newPassword) {
       toast({
         title: "Validation Error",
@@ -62,24 +75,36 @@ const AdminManagement = () => {
       return;
     }
 
+    setLoading(true);
     try {
-      addUser(newUsername, newPassword, newRole);
-      fetchUsers();
-      setIsAddDialogOpen(false);
-      setNewUsername("");
-      setNewPassword("");
-      setNewRole("volunteer");
-      
-      toast({
-        title: "User Created",
-        description: `New ${newRole} account created successfully.`,
-      });
+      const result = await addUser(newUsername, newPassword, newRole);
+      if (result) {
+        await fetchUsers();
+        setIsAddDialogOpen(false);
+        setNewUsername("");
+        setNewPassword("");
+        setNewRole("volunteer");
+        
+        toast({
+          title: "User Created",
+          description: `New ${newRole} account created successfully.`,
+        });
+      } else {
+        toast({
+          title: "Creation Failed",
+          description: "Failed to create new user account.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error("Error creating user:", error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create new user account.",
+        description: "An error occurred while creating the user.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,25 +138,29 @@ const AdminManagement = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredUsers.map((u) => (
-            <Card key={u.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex justify-between items-center">
-                  <span>{u.username}</span>
-                  <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    {u.role}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                User ID: {u.id}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredUsers.length === 0 && (
+        {loading ? (
+          <div className="text-center p-8">
+            <p className="text-muted-foreground">Loading users...</p>
+          </div>
+        ) : filteredUsers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredUsers.map((u) => (
+              <Card key={u.id}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex justify-between items-center">
+                    <span>{u.username}</span>
+                    <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      {u.role}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  User ID: {u.id}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
           <Card>
             <CardContent className="text-center py-12">
               <p className="text-muted-foreground">
@@ -179,10 +208,12 @@ const AdminManagement = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button onClick={handleAddUser}>Create User</Button>
+            <Button onClick={handleAddUser} disabled={loading}>
+              {loading ? "Creating..." : "Create User"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

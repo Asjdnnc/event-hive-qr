@@ -102,15 +102,20 @@ const BulkTeamRegistration = () => {
         throw new Error("No valid team data found in the CSV file");
       }
 
-      const registeredTeams = addBulkTeams(teamsData);
+      const registeredTeams = await addBulkTeams(teamsData);
       
-      toast({
-        title: "Teams Registered Successfully",
-        description: `${registeredTeams.length} teams have been registered`,
-      });
-      
-      setFile(null);
+      if (registeredTeams.length > 0) {
+        toast({
+          title: "Teams Registered Successfully",
+          description: `${registeredTeams.length} teams have been registered`,
+        });
+        
+        setFile(null);
+      } else {
+        throw new Error("Failed to register teams");
+      }
     } catch (error) {
+      console.error("Error processing CSV:", error);
       toast({
         title: "Error Processing CSV",
         description: error instanceof Error ? error.message : "An unknown error occurred",

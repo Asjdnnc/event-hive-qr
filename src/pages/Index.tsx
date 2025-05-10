@@ -1,26 +1,28 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { authenticateUser, setCurrentUser } from "@/lib/data";
+import { authenticateUser, setCurrentUser, migrateDataToSupabase } from "@/lib/data";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate network request
-    setTimeout(() => {
-      const user = authenticateUser(username, password);
+    try {
+      const user = await authenticateUser(username, password);
+      
       if (user) {
         setCurrentUser(user);
         toast({
@@ -35,8 +37,44 @@ const Index = () => {
           variant: "destructive",
         });
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login Failed",
+        description: "An error occurred during login.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleMigrateData = async () => {
+    setIsMigrating(true);
+    try {
+      const success = await migrateDataToSupabase();
+      if (success) {
+        toast({
+          title: "Migration Successful",
+          description: "Data has been migrated to the database.",
+        });
+      } else {
+        toast({
+          title: "Migration Failed",
+          description: "An error occurred during data migration.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Migration error:", error);
+      toast({
+        title: "Migration Failed",
+        description: "An error occurred during data migration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMigrating(false);
+    }
   };
 
   return (
@@ -84,9 +122,19 @@ const Index = () => {
                 />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-2">
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing in..." : "Sign In"}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={handleMigrateData}
+                disabled={isMigrating}
+              >
+                {isMigrating ? "Migrating Data..." : "Migrate Local Data to Database"}
               </Button>
             </CardFooter>
           </form>

@@ -14,6 +14,7 @@ import TeamCard from "@/components/TeamCard";
 const TeamManagement = () => {
   const [user, setUser] = useState(getCurrentUser());
   const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [editName, setEditName] = useState("");
@@ -32,9 +33,21 @@ const TeamManagement = () => {
     fetchTeams();
   }, [user, navigate]);
 
-  const fetchTeams = () => {
-    const allTeams = getAllTeams();
-    setTeams(allTeams);
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      const allTeams = await getAllTeams();
+      setTeams(allTeams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load teams. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (team: Team) => {
@@ -61,7 +74,7 @@ const TeamManagement = () => {
     setEditMembers(newMembers);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingTeam) return;
 
     if (!editName || !editLeader || editMembers.some(m => !m.name || !m.collegeName)) {
@@ -73,59 +86,86 @@ const TeamManagement = () => {
       return;
     }
 
-    const updatedTeam = updateTeam(editingTeam.id, {
-      name: editName,
-      leader: editLeader,
-      members: editMembers,
-    });
-
-    if (updatedTeam) {
-      fetchTeams();
-      setIsEditDialogOpen(false);
-      toast({
-        title: "Team Updated",
-        description: "Team details have been updated successfully.",
+    try {
+      const updatedTeam = await updateTeam(editingTeam.id, {
+        name: editName,
+        leader: editLeader,
+        members: editMembers,
       });
-    } else {
+
+      if (updatedTeam) {
+        await fetchTeams();
+        setIsEditDialogOpen(false);
+        toast({
+          title: "Team Updated",
+          description: "Team details have been updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Update Failed",
+          description: "Failed to update team details.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating team:", error);
       toast({
         title: "Update Failed",
-        description: "Failed to update team details.",
+        description: "An error occurred while updating the team.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this team?")) {
-      const deleted = deleteTeam(id);
-      if (deleted) {
-        fetchTeams();
-        toast({
-          title: "Team Deleted",
-          description: "The team has been deleted successfully.",
-        });
-      } else {
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this team?")) {
+      try {
+        const deleted = await deleteTeam(id);
+        if (deleted) {
+          await fetchTeams();
+          toast({
+            title: "Team Deleted",
+            description: "The team has been deleted successfully.",
+          });
+        } else {
+          toast({
+            title: "Delete Failed",
+            description: "Failed to delete the team.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting team:", error);
         toast({
           title: "Delete Failed",
-          description: "Failed to delete the team.",
+          description: "An error occurred while deleting the team.",
           variant: "destructive",
         });
       }
     }
   };
 
-  const handleUpdateStatus = (id: string, status: "active" | "inactive") => {
-    const updatedTeam = updateTeam(id, { status });
-    if (updatedTeam) {
-      fetchTeams();
-      toast({
-        title: "Status Updated",
-        description: `Team status updated to ${status}.`,
-      });
-    } else {
+  const handleUpdateStatus = async (id: string, status: "active" | "inactive") => {
+    try {
+      const updatedTeam = await updateTeam(id, { status });
+      if (updatedTeam) {
+        await fetchTeams();
+        toast({
+          title: "Status Updated",
+          description: `Team status updated to ${status}.`,
+        });
+      } else {
+        toast({
+          title: "Update Failed",
+          description: "Failed to update team status.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating team status:", error);
       toast({
         title: "Update Failed",
-        description: "Failed to update team status.",
+        description: "An error occurred while updating the team status.",
         variant: "destructive",
       });
     }
@@ -158,7 +198,13 @@ const TeamManagement = () => {
           />
         </div>
 
-        {filteredTeams.length === 0 && (
+        {loading ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-muted-foreground">Loading teams...</p>
+            </CardContent>
+          </Card>
+        ) : filteredTeams.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <p className="text-muted-foreground">
@@ -168,19 +214,19 @@ const TeamManagement = () => {
               </p>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredTeams.map((team) => (
+              <TeamCard
+                key={team.id}
+                team={team}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                onUpdateStatus={handleUpdateStatus}
+              />
+            ))}
+          </div>
         )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredTeams.map((team) => (
-            <TeamCard
-              key={team.id}
-              team={team}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onUpdateStatus={handleUpdateStatus}
-            />
-          ))}
-        </div>
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
