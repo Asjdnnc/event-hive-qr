@@ -38,8 +38,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             .single();
             
           if (userData && !error) {
-            localStorage.setItem("currentUser", JSON.stringify(userData));
-            setCurrentUser(userData);
+            // Make sure the role is properly cast to UserRole
+            const validatedUser = {
+              ...userData,
+              role: userData.role as UserRole
+            };
+            localStorage.setItem("currentUser", JSON.stringify(validatedUser));
+            setCurrentUser(validatedUser);
             setIsAuthenticated(true);
           } else {
             setIsAuthenticated(false);
@@ -67,7 +72,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  if (requiredRole && !requiredRole.includes(currentUser.role)) {
+  if (requiredRole && !requiredRole.includes(currentUser.role as UserRole)) {
     return <Navigate to="/dashboard" replace />;
   }
 
