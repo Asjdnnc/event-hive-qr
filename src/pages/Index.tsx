@@ -1,23 +1,39 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { migrateDataToSupabase } from "@/lib/data";
+import { migrateDataToSupabase, authenticateUser } from "@/lib/data";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { connectToMongoDB } from "@/integrations/mongodb/connection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 const Index = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isMigrating, setIsMigrating] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Initialize MongoDB connection
+  useEffect(() => {
+    const initMongoDB = async () => {
+      try {
+        await connectToMongoDB();
+      } catch (error) {
+        console.error("MongoDB initialization error:", error);
+        setErrorMessage("Failed to connect to the database.");
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    initMongoDB();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,37 +41,25 @@ const Index = () => {
     setErrorMessage(null);
     
     try {
-      // Try to sign in directly with email/password
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Try to sign in with username/password
+      const user = await authenticateUser(username, password);
 
-      if (authError) {
-        console.error("Authentication error:", authError);
-        setErrorMessage("Invalid email or password. Please try again.");
+      if (!user) {
+        console.error("Authentication error: Invalid credentials");
+        setErrorMessage("Invalid username or password. Please try again.");
         setLoading(false);
         return;
       }
 
-      if (authData.user) {
-        // After successful authentication, store basic user info and redirect
-        // We'll avoid querying the users table directly to prevent RLS issues
-        const userInfo = {
-          id: authData.user.id,
-          username: email.split('@')[0],
-          role: "admin" as const, // Default to admin role - in a real app, you'd determine this properly
-        };
-        
-        localStorage.setItem("currentUser", JSON.stringify(userInfo));
-        
-        toast({
-          title: "Login Successful",
-          description: `Welcome, ${userInfo.username}!`,
-        });
-        
-        navigate("/dashboard");
-      }
+      // Store user info in localStorage
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome, ${user.username}!`,
+      });
+      
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("An error occurred during login. Please try again.");
@@ -64,33 +68,13 @@ const Index = () => {
     }
   };
 
-  const handleMigrateData = async () => {
-    setIsMigrating(true);
-    try {
-      const success = await migrateDataToSupabase();
-      if (success) {
-        toast({
-          title: "Migration Successful",
-          description: "Data has been migrated to the database. You can now log in with your credentials.",
-        });
-      } else {
-        toast({
-          title: "Migration Failed",
-          description: "An error occurred during data migration.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Migration error:", error);
-      toast({
-        title: "Migration Failed",
-        description: "An error occurred during data migration.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsMigrating(false);
-    }
-  };
+  if (initializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Connecting to database...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center justify-center p-4">
@@ -118,14 +102,14 @@ const Index = () => {
                 </Alert>
               )}
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email
+                <label htmlFor="username" className="text-sm font-medium">
+                  Username
                 </label>
                 <Input
-                  id="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
@@ -142,29 +126,18 @@ const Index = () => {
                   required
                 />
               </div>
+              <div className="text-sm text-muted-foreground">
+                <p>Default admin credentials:</p>
+                <p>Username: admin | Password: admin</p>
+              </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-2">
+            <CardFooter>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing in..." : "Sign In"}
-              </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full" 
-                onClick={handleMigrateData}
-                disabled={isMigrating}
-              >
-                {isMigrating ? "Migrating Data..." : "Migrate Local Data to Database"}
               </Button>
             </CardFooter>
           </form>
         </Card>
-
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>First time using the system with Supabase?</p>
-          <p>Click the "Migrate Local Data to Database" button above to transfer your existing data.</p>
-        </div>
       </div>
     </div>
   );

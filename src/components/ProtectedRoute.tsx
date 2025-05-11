@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getCurrentUser } from "@/lib/data";
-import { UserRole } from "@/lib/types";
-import { supabase } from "@/integrations/supabase/client";
+import { UserRole, User } from "@/lib/types";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,38 +14,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole = ["admin", "volunteer"] 
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [currentUser, setCurrentUser] = useState(getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
   
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if user is authenticated with Supabase
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
+      if (!currentUser) {
         setIsAuthenticated(false);
         return;
       }
       
-      // If we have a session but no current user in localStorage,
-      // create a basic user object with admin role
-      if (!currentUser && data.session) {
-        try {
-          const basicUserInfo = {
-            id: data.session.user.id,
-            username: data.session.user.email?.split('@')[0] || 'user',
-            role: 'admin' as UserRole, // Default to admin role
-          };
-          
-          localStorage.setItem("currentUser", JSON.stringify(basicUserInfo));
-          setCurrentUser(basicUserInfo);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error("Error setting up user data:", error);
-          setIsAuthenticated(false);
-        }
-      } else {
-        setIsAuthenticated(Boolean(currentUser));
-      }
+      setIsAuthenticated(true);
     };
     
     checkAuth();
