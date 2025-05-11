@@ -4,46 +4,66 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { authenticateUser, setCurrentUser, migrateDataToSupabase } from "@/lib/data";
+import { migrateDataToSupabase } from "@/lib/data";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Index = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
     
     try {
-      const user = await authenticateUser(username, password);
-      
-      if (user) {
-        setCurrentUser(user);
+      // Sign in with Supabase auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: `${username}@hackzilla.app`,
+        password
+      });
+
+      if (authError) {
+        console.error("Authentication error:", authError);
+        setErrorMessage("Invalid username or password. If you're trying to use a local account, please migrate data first.");
+        return;
+      }
+
+      if (authData.user) {
+        // Get user data from the users table
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (userError || !userData) {
+          console.error("User data fetch error:", userError);
+          setErrorMessage("User profile not found. Please contact an administrator.");
+          return;
+        }
+
+        // Store current user in localStorage for app-wide access
+        localStorage.setItem("currentUser", JSON.stringify(userData));
+        
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${user.username}!`,
+          description: `Welcome back, ${userData.username}!`,
         });
+        
         navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid username or password.",
-          variant: "destructive",
-        });
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        title: "Login Failed",
-        description: "An error occurred during login.",
-        variant: "destructive",
-      });
+      setErrorMessage("An error occurred during login. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,7 +76,7 @@ const Index = () => {
       if (success) {
         toast({
           title: "Migration Successful",
-          description: "Data has been migrated to the database.",
+          description: "Data has been migrated to the database. You can now log in with your credentials.",
         });
       } else {
         toast({
@@ -96,6 +116,12 @@ const Index = () => {
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <label htmlFor="username" className="text-sm font-medium">
                   Username
@@ -139,6 +165,11 @@ const Index = () => {
             </CardFooter>
           </form>
         </Card>
+
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          <p>First time using the system with Supabase?</p>
+          <p>Click the "Migrate Local Data to Database" button above to transfer your existing data.</p>
+        </div>
       </div>
     </div>
   );
