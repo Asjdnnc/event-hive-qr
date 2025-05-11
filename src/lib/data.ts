@@ -1,3 +1,4 @@
+
 import { Team, User, TeamMember } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
@@ -217,17 +218,20 @@ export const getTeam = async (id: string): Promise<Team | undefined> => {
       return undefined;
     }
 
-    // Construct team object
+    // Construct team object with proper type casting
     const team: Team = {
       id: teamData.id,
       name: teamData.name,
       leader: teamData.leader,
-      status: teamData.status,
-      members: membersData as TeamMember[],
+      status: teamData.status as "active" | "inactive",
+      members: (membersData || []).map(member => ({
+        name: member.name,
+        collegeName: member.college_name
+      })),
       foodStatus: foodData ? {
-        lunch: foodData.lunch,
-        dinner: foodData.dinner,
-        snacks: foodData.snacks,
+        lunch: foodData.lunch as "valid" | "invalid",
+        dinner: foodData.dinner as "valid" | "invalid",
+        snacks: foodData.snacks as "valid" | "invalid",
       } : {
         lunch: "invalid",
         dinner: "invalid",
@@ -272,35 +276,42 @@ export const getAllTeams = async (): Promise<Team[]> => {
       console.error("Error fetching food statuses:", foodStatusesResult.error);
     }
 
-    const membersMap = (membersResult.data || []).reduce((acc, member) => {
-      if (!acc[member.team_id]) {
-        acc[member.team_id] = [];
+    const membersMap: Record<string, TeamMember[]> = {};
+    if (membersResult.data) {
+      for (const member of membersResult.data) {
+        if (!membersMap[member.team_id]) {
+          membersMap[member.team_id] = [];
+        }
+        membersMap[member.team_id].push({
+          name: member.name,
+          collegeName: member.college_name
+        });
       }
-      acc[member.team_id].push(member);
-      return acc;
-    }, {} as Record<string, TeamMember[]>);
+    }
 
-    const foodStatusMap = (foodStatusesResult.data || []).reduce((acc, status) => {
-      acc[status.team_id] = status;
-      return acc;
-    }, {} as Record<string, any>);
+    const foodStatusMap: Record<string, any> = {};
+    if (foodStatusesResult.data) {
+      for (const status of foodStatusesResult.data) {
+        foodStatusMap[status.team_id] = status;
+      }
+    }
 
-    // Construct team objects
+    // Construct team objects with proper type casting
     cachedTeams = teamsData.map(team => {
       return {
         id: team.id,
         name: team.name,
         leader: team.leader,
-        status: team.status,
+        status: team.status as "active" | "inactive",
         members: membersMap[team.id] || [],
         foodStatus: foodStatusMap[team.id] ? {
-          lunch: foodStatusMap[team.id].lunch,
-          dinner: foodStatusMap[team.id].dinner,
-          snacks: foodStatusMap[team.id].snacks,
+          lunch: foodStatusMap[team.id].lunch as "valid" | "invalid",
+          dinner: foodStatusMap[team.id].dinner as "valid" | "invalid",
+          snacks: foodStatusMap[team.id].snacks as "valid" | "invalid",
         } : {
-          lunch: "invalid",
-          dinner: "invalid",
-          snacks: "invalid",
+          lunch: "invalid" as const,
+          dinner: "invalid" as const,
+          snacks: "invalid" as const,
         },
         createdAt: new Date(team.created_at),
       };
@@ -597,7 +608,7 @@ export const migrateDataToSupabase = async (): Promise<boolean> => {
       console.log(`Migrating ${teams.length} teams...`);
       
       for (const team of teams) {
-        // Insert team
+        // Insert team with proper date format
         const { error: teamError } = await supabase
           .from('teams')
           .insert({
@@ -605,7 +616,7 @@ export const migrateDataToSupabase = async (): Promise<boolean> => {
             name: team.name,
             leader: team.leader,
             status: team.status,
-            created_at: team.createdAt
+            created_at: team.createdAt.toString() // Convert Date to string for Postgres
           });
           
         if (teamError) {
