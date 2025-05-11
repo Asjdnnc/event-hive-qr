@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 const Index = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -25,15 +25,16 @@ const Index = () => {
     setErrorMessage(null);
     
     try {
-      // Sign in with Supabase auth
+      // Try to sign in directly with email/password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: `${username}@hackzilla.app`,
+        email,
         password
       });
 
       if (authError) {
         console.error("Authentication error:", authError);
-        setErrorMessage("Invalid username or password. If you're trying to use a local account, please migrate data first.");
+        setErrorMessage("Invalid email or password. Please try again.");
+        setLoading(false);
         return;
       }
 
@@ -47,19 +48,57 @@ const Index = () => {
 
         if (userError || !userData) {
           console.error("User data fetch error:", userError);
-          setErrorMessage("User profile not found. Please contact an administrator.");
-          return;
+          
+          // Try to create a user profile if it doesn't exist
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: authData.user.id,
+              username: email.split('@')[0],
+              role: 'admin',
+              password: password // Note: In production, you wouldn't store plaintext passwords
+            });
+            
+          if (insertError) {
+            setErrorMessage("Failed to create user profile. Please contact an administrator.");
+            setLoading(false);
+            return;
+          }
+          
+          // Fetch the newly created user
+          const { data: newUserData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+            
+          if (newUserData) {
+            localStorage.setItem("currentUser", JSON.stringify({
+              ...newUserData,
+              role: newUserData.role as "admin" | "volunteer"
+            }));
+            
+            toast({
+              title: "Login Successful",
+              description: `Welcome, ${newUserData.username}!`,
+            });
+            
+            navigate("/dashboard");
+          }
+        } else {
+          // Store current user in localStorage for app-wide access with proper type casting
+          localStorage.setItem("currentUser", JSON.stringify({
+            ...userData,
+            role: userData.role as "admin" | "volunteer"
+          }));
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${userData.username}!`,
+          });
+          
+          navigate("/dashboard");
         }
-
-        // Store current user in localStorage for app-wide access
-        localStorage.setItem("currentUser", JSON.stringify(userData));
-        
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${userData.username}!`,
-        });
-        
-        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -123,14 +162,14 @@ const Index = () => {
                 </Alert>
               )}
               <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium">
-                  Username
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
                 </label>
                 <Input
-                  id="username"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
