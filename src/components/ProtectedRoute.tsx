@@ -28,29 +28,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       }
       
       // If we have a session but no current user in localStorage,
-      // fetch the user data from the database
+      // create a basic user object with admin role
       if (!currentUser && data.session) {
         try {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-            
-          if (userData && !error) {
-            // Make sure the role is properly cast to UserRole
-            const validatedUser = {
-              ...userData,
-              role: userData.role as UserRole
-            };
-            localStorage.setItem("currentUser", JSON.stringify(validatedUser));
-            setCurrentUser(validatedUser);
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
+          const basicUserInfo = {
+            id: data.session.user.id,
+            username: data.session.user.email?.split('@')[0] || 'user',
+            role: 'admin' as UserRole, // Default to admin role
+          };
+          
+          localStorage.setItem("currentUser", JSON.stringify(basicUserInfo));
+          setCurrentUser(basicUserInfo);
+          setIsAuthenticated(true);
         } catch (error) {
-          console.error("Error fetching user data:", error);
+          console.error("Error setting up user data:", error);
           setIsAuthenticated(false);
         }
       } else {
