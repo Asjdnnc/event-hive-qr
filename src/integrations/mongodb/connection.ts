@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 
 // MongoDB connection string - in a real app, this would be in an environment variable
-const MONGODB_URI = 'mongodb+srv://<username>:<password>@cluster0.mongodb.net/hackzilla?retryWrites=true&w=majority';
+const MONGODB_URI = 'mongodb://localhost:27017/hackzilla';
 // For local MongoDB: const MONGODB_URI = 'mongodb://localhost:27017/hackzilla';
 
 // Create a function to handle MongoDB connection
