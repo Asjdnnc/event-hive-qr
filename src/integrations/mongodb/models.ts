@@ -92,14 +92,37 @@ const teamSchema = new mongoose.Schema({
   }
 });
 
+// Create indexes for better performance in production
+userSchema.index({ username: 1 });
+teamSchema.index({ id: 1 });
+teamSchema.index({ createdAt: -1 });
+
+// Add timestamps to schemas
+userSchema.set('timestamps', true);
+teamSchema.set('timestamps', true);
+
+// Models registry to prevent duplicate model errors
+let UserModel: mongoose.Model<any>;
+let TeamModel: mongoose.Model<any>;
+
 // Create and register models
 export const registerModels = () => {
-  // Only register models if they don't already exist
-  // This prevents errors when hot-reloading in development
-  const models = mongoose.models;
+  // Only register models if they don't already exist to prevent errors on hot reloading
+  if (!UserModel) {
+    try {
+      UserModel = mongoose.models.User || mongoose.model('User', userSchema);
+    } catch (error) {
+      UserModel = mongoose.model('User', userSchema);
+    }
+  }
   
-  const UserModel = models.User || mongoose.model('User', userSchema);
-  const TeamModel = models.Team || mongoose.model('Team', teamSchema);
+  if (!TeamModel) {
+    try {
+      TeamModel = mongoose.models.Team || mongoose.model('Team', teamSchema);
+    } catch (error) {
+      TeamModel = mongoose.model('Team', teamSchema);
+    }
+  }
   
   return { UserModel, TeamModel };
 };
@@ -107,6 +130,6 @@ export const registerModels = () => {
 // Export a function to get the models safely
 export const getModels = () => {
   // Make sure to register models before getting them
-  const { UserModel, TeamModel } = registerModels();
-  return { UserModel, TeamModel };
+  const models = registerModels();
+  return models;
 };
