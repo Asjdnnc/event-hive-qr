@@ -92,6 +92,18 @@ const teamSchema = new mongoose.Schema({
   }
 });
 
-// Create and export models
+// Create and register models
+export const registerModels = () => {
+  // Only register models if they don't already exist
+  // This prevents errors when hot-reloading in development
+  const models = mongoose.models;
+  
+  const UserModel = models.User || mongoose.model('User', userSchema);
+  const TeamModel = models.Team || mongoose.model('Team', teamSchema);
+  
+  return { UserModel, TeamModel };
+};
+
+// Export models for direct usage elsewhere
 export const UserModel = mongoose.models.User || mongoose.model('User', userSchema);
 export const TeamModel = mongoose.models.Team || mongoose.model('Team', teamSchema);

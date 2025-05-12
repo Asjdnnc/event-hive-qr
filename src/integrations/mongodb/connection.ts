@@ -1,5 +1,6 @@
 
 import mongoose from 'mongoose';
+import { registerModels } from './models';
 
 // MongoDB connection string - in a real app, this would be in an environment variable
 const MONGODB_URI = 'mongodb://localhost:27017/hackzilla';
@@ -17,8 +18,11 @@ export const connectToMongoDB = async () => {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB successfully');
     
+    // Register models
+    const { UserModel } = registerModels();
+    
     // Create default admin user if it doesn't exist
-    await createDefaultAdmin();
+    await createDefaultAdmin(UserModel);
     
     return mongoose.connection;
   } catch (error) {
@@ -28,10 +32,8 @@ export const connectToMongoDB = async () => {
 };
 
 // Create default admin user if it doesn't exist
-const createDefaultAdmin = async () => {
+const createDefaultAdmin = async (UserModel) => {
   try {
-    const UserModel = mongoose.model('User');
-    
     // Check if admin user exists
     const adminExists = await UserModel.findOne({ username: 'admin' });
     
