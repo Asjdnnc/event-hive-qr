@@ -104,6 +104,9 @@ export const registerModels = () => {
   return { UserModel, TeamModel };
 };
 
-// Export models for direct usage elsewhere
-export const UserModel = mongoose.models.User || mongoose.model('User', userSchema);
-export const TeamModel = mongoose.models.Team || mongoose.model('Team', teamSchema);
+// Export a function to get the models safely
+export const getModels = () => {
+  // Make sure to register models before getting them
+  const { UserModel, TeamModel } = registerModels();
+  return { UserModel, TeamModel };
+};

@@ -1,7 +1,8 @@
+
 import { Team, User, TeamMember, UserRole } from "./types";
 import { v4 as uuidv4 } from "uuid";
-import { UserModel, TeamModel } from "@/integrations/mongodb/models";
 import { connectToMongoDB } from "@/integrations/mongodb/connection";
+import { getModels } from "@/integrations/mongodb/models";
 
 // In-memory cache for performance
 let cachedUsers: User[] | null = null;
@@ -13,6 +14,9 @@ let lastTeamIdNumber = 2500;
 // Get next team ID
 const getNextTeamId = async (): Promise<string> => {
   try {
+    // Get models
+    const { TeamModel } = getModels();
+    
     // Find the highest team ID number in the database
     const highestTeam = await TeamModel.findOne().sort({ id: -1 }).limit(1);
     if (highestTeam && parseInt(highestTeam.id) > lastTeamIdNumber) {
@@ -31,6 +35,9 @@ export const authenticateUser = async (username: string, password: string): Prom
   try {
     // Ensure MongoDB is connected
     await connectToMongoDB();
+
+    // Get models
+    const { UserModel } = getModels();
 
     // Find user by username and password
     const user = await UserModel.findOne({ username, password });
@@ -69,6 +76,9 @@ export const addUser = async (username: string, password: string, role: "admin" 
     // Ensure MongoDB is connected
     await connectToMongoDB();
 
+    // Get models
+    const { UserModel } = getModels();
+
     // Check if user already exists
     const existingUser = await UserModel.findOne({ username });
     if (existingUser) {
@@ -105,6 +115,9 @@ export const getAllUsers = async (): Promise<User[]> => {
     // Ensure MongoDB is connected
     await connectToMongoDB();
 
+    // Get models
+    const { UserModel } = getModels();
+
     // Get all users
     const users = await UserModel.find();
     
@@ -127,6 +140,9 @@ export const getTeam = async (id: string): Promise<Team | undefined> => {
   try {
     // Ensure MongoDB is connected
     await connectToMongoDB();
+
+    // Get models
+    const { TeamModel } = getModels();
 
     // Get team
     const team = await TeamModel.findOne({ id });
@@ -164,6 +180,9 @@ export const getAllTeams = async (): Promise<Team[]> => {
     // Ensure MongoDB is connected
     await connectToMongoDB();
 
+    // Get models
+    const { TeamModel } = getModels();
+
     // Get all teams
     const teams = await TeamModel.find().sort({ createdAt: -1 });
     
@@ -195,6 +214,9 @@ export const addTeam = async (team: Omit<Team, "id" | "createdAt">): Promise<Tea
   try {
     // Ensure MongoDB is connected
     await connectToMongoDB();
+
+    // Get models
+    const { TeamModel } = getModels();
 
     // Get next team ID
     const newId = await getNextTeamId();
@@ -257,6 +279,9 @@ export const updateTeam = async (id: string, data: Partial<Team>): Promise<Team 
     // Ensure MongoDB is connected
     await connectToMongoDB();
 
+    // Get models
+    const { TeamModel } = getModels();
+
     // Update team
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
@@ -283,6 +308,9 @@ export const deleteTeam = async (id: string): Promise<boolean> => {
     // Ensure MongoDB is connected
     await connectToMongoDB();
 
+    // Get models
+    const { TeamModel } = getModels();
+
     // Delete team
     await TeamModel.deleteOne({ id });
 
@@ -304,6 +332,9 @@ export const updateTeamFoodStatus = async (
   try {
     // Ensure MongoDB is connected
     await connectToMongoDB();
+
+    // Get models
+    const { TeamModel } = getModels();
 
     // Update food status
     const updateData: any = {};
