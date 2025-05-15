@@ -108,20 +108,16 @@ let TeamModel: mongoose.Model<any>;
 // Create and register models
 export const registerModels = () => {
   // Only register models if they don't already exist to prevent errors on hot reloading
-  if (!UserModel) {
-    try {
-      UserModel = mongoose.models.User || mongoose.model('User', userSchema);
-    } catch (error) {
-      UserModel = mongoose.model('User', userSchema);
-    }
+  try {
+    UserModel = mongoose.models.User || mongoose.model('User', userSchema);
+  } catch (error) {
+    UserModel = mongoose.model('User', userSchema);
   }
   
-  if (!TeamModel) {
-    try {
-      TeamModel = mongoose.models.Team || mongoose.model('Team', teamSchema);
-    } catch (error) {
-      TeamModel = mongoose.model('Team', teamSchema);
-    }
+  try {
+    TeamModel = mongoose.models.Team || mongoose.model('Team', teamSchema);
+  } catch (error) {
+    TeamModel = mongoose.model('Team', teamSchema);
   }
   
   return { UserModel, TeamModel };

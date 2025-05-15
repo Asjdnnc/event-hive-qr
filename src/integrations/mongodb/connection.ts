@@ -29,7 +29,9 @@ export const connectToMongoDB = async () => {
 
     // Connect to MongoDB with enhanced options for production reliability
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(MONGODB_URI, mongooseOptions);
+    
+    // Fix the connection approach - use mongoose.connect properly
+    await mongoose.connect(MONGODB_URI);
     
     isConnected = true;
     console.log('Connected to MongoDB successfully');
@@ -40,13 +42,12 @@ export const connectToMongoDB = async () => {
     // Create default admin user if it doesn't exist
     await createDefaultAdmin(UserModel);
     
-    // Set up connection event listeners
+    // Set up connection event listeners after successful connection
     setupConnectionListeners();
     
     return mongoose.connection;
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    // In production, you might want to implement retry logic here
     isConnected = false;
     return null;
   }
@@ -75,18 +76,19 @@ const createDefaultAdmin = async (UserModel) => {
 
 // Setup connection event listeners
 const setupConnectionListeners = () => {
-  // Only set up listeners if we're in a browser environment or if connection exists
-  if (mongoose.connection) {
-    mongoose.connection.on('connected', () => {
+  // Check if connection exists before attaching listeners
+  const connection = mongoose.connection;
+  if (connection) {
+    connection.on('connected', () => {
       console.log('MongoDB connection established');
     });
     
-    mongoose.connection.on('error', (err) => {
+    connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
       isConnected = false;
     });
     
-    mongoose.connection.on('disconnected', () => {
+    connection.on('disconnected', () => {
       console.log('MongoDB connection disconnected');
       isConnected = false;
     });
@@ -95,8 +97,10 @@ const setupConnectionListeners = () => {
   // Handle application termination - only in Node.js environment
   if (typeof window === 'undefined') {
     process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      console.log('MongoDB connection closed due to app termination');
+      if (mongoose.connection) {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed due to app termination');
+      }
       process.exit(0);
     });
   }

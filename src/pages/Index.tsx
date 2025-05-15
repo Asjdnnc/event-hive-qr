@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { migrateDataToSupabase, authenticateUser } from "@/lib/data";
+import { authenticateUser } from "@/lib/data";
 import { useToast } from "@/components/ui/use-toast";
 import { connectToMongoDB } from "@/integrations/mongodb/connection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +23,11 @@ const Index = () => {
   useEffect(() => {
     const initMongoDB = async () => {
       try {
-        await connectToMongoDB();
+        // Use the fixed connectToMongoDB function
+        const connection = await connectToMongoDB();
+        if (!connection) {
+          setErrorMessage("Failed to connect to the database.");
+        }
       } catch (error) {
         console.error("MongoDB initialization error:", error);
         setErrorMessage("Failed to connect to the database.");

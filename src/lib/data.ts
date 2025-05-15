@@ -34,10 +34,18 @@ const getNextTeamId = async (): Promise<string> => {
 export const authenticateUser = async (username: string, password: string): Promise<User | null> => {
   try {
     // Ensure MongoDB is connected
-    await connectToMongoDB();
+    const connection = await connectToMongoDB();
+    if (!connection) {
+      console.error("Failed to connect to MongoDB");
+      return null;
+    }
 
     // Get models
     const { UserModel } = getModels();
+    if (!UserModel) {
+      console.error("User model not found");
+      return null;
+    }
 
     // Find user by username and password
     const user = await UserModel.findOne({ username, password });
