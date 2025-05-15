@@ -1,9 +1,10 @@
 
 import mongoose from 'mongoose';
 import { registerModels } from './models';
+import { env } from '@/lib/env';
 
-// Get MongoDB connection string from environment variables, fallback to local for development
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hackzilla';
+// Get MongoDB connection string from environment configuration
+const MONGODB_URI = env.mongodbUri;
 
 // Connection options for better reliability in production
 const mongooseOptions = {
@@ -58,7 +59,7 @@ const createDefaultAdmin = async (UserModel) => {
       console.log('Creating default admin user...');
       await UserModel.create({
         username: 'admin',
-        password: process.env.ADMIN_DEFAULT_PASSWORD || 'admin', // Use environment variable if available
+        password: env.adminDefaultPassword, // Use environment variable from env.ts
         role: 'admin',
         email: 'admin@hackzilla.app'
       });
@@ -84,12 +85,14 @@ mongoose.connection.on('disconnected', () => {
   isConnected = false;
 });
 
-// Handle application termination
-process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('MongoDB connection closed due to app termination');
-  process.exit(0);
-});
+// Handle application termination - only in Node.js environment
+if (typeof window === 'undefined') {
+  process.on('SIGINT', async () => {
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed due to app termination');
+    process.exit(0);
+  });
+}
 
 // Export the mongoose instance
 export default mongoose;

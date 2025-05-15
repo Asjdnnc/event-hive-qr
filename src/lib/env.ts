@@ -8,10 +8,10 @@ export const env = {
   isDevelopment: import.meta.env.DEV || true,
   
   // MongoDB
-  mongodbUri: (import.meta.env.MONGODB_URI as string) || 'mongodb://localhost:27017/hackzilla',
+  mongodbUri: (import.meta.env.VITE_MONGODB_URI as string) || 'mongodb://localhost:27017/hackzilla',
   
   // Authentication
-  adminDefaultPassword: (import.meta.env.ADMIN_DEFAULT_PASSWORD as string) || 'admin',
+  adminDefaultPassword: (import.meta.env.VITE_ADMIN_DEFAULT_PASSWORD as string) || 'admin',
   
   // Application
   appName: 'Hackzilla',
