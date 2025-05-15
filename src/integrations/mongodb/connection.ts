@@ -30,8 +30,10 @@ export const connectToMongoDB = async () => {
     // Connect to MongoDB with enhanced options for production reliability
     console.log('Connecting to MongoDB...');
     
-    // Fix the connection approach - use mongoose.connect properly
-    await mongoose.connect(MONGODB_URI);
+    // Fix the connect method call - ensure mongoose version compatibility
+    if (!mongoose.connection.readyState) {
+      await mongoose.connect(MONGODB_URI, mongooseOptions);
+    }
     
     isConnected = true;
     console.log('Connected to MongoDB successfully');
@@ -96,13 +98,15 @@ const setupConnectionListeners = () => {
   
   // Handle application termination - only in Node.js environment
   if (typeof window === 'undefined') {
-    process.on('SIGINT', async () => {
-      if (mongoose.connection) {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed due to app termination');
-      }
-      process.exit(0);
-    });
+    if (typeof process !== 'undefined' && process.on) {
+      process.on('SIGINT', async () => {
+        if (mongoose.connection) {
+          await mongoose.connection.close();
+          console.log('MongoDB connection closed due to app termination');
+        }
+        process.exit(0);
+      });
+    }
   }
 };
 
