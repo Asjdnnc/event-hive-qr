@@ -40,6 +40,9 @@ export const connectToMongoDB = async () => {
     // Create default admin user if it doesn't exist
     await createDefaultAdmin(UserModel);
     
+    // Set up connection event listeners
+    setupConnectionListeners();
+    
     return mongoose.connection;
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -70,29 +73,34 @@ const createDefaultAdmin = async (UserModel) => {
   }
 };
 
-// Handle connection events for better monitoring
-mongoose.connection.on('connected', () => {
-  console.log('MongoDB connection established');
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-  isConnected = false;
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB connection disconnected');
-  isConnected = false;
-});
-
-// Handle application termination - only in Node.js environment
-if (typeof window === 'undefined') {
-  process.on('SIGINT', async () => {
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed due to app termination');
-    process.exit(0);
-  });
-}
+// Setup connection event listeners
+const setupConnectionListeners = () => {
+  // Only set up listeners if we're in a browser environment or if connection exists
+  if (mongoose.connection) {
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB connection established');
+    });
+    
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+      isConnected = false;
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB connection disconnected');
+      isConnected = false;
+    });
+  }
+  
+  // Handle application termination - only in Node.js environment
+  if (typeof window === 'undefined') {
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed due to app termination');
+      process.exit(0);
+    });
+  }
+};
 
 // Export the mongoose instance
 export default mongoose;
